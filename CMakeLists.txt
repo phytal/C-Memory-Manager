@@ -21,7 +21,7 @@ target_link_libraries(project3 tdmm)
 
 enable_testing()
 
-add_executable(hello_test hello_test.cc)
+add_executable(hello_test testing/hello_test.cc)
 
 target_link_libraries(
   hello_test
