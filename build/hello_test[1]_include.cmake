@@ -1,5 +1,0 @@
-if(EXISTS "/u/wzhang/cs429/prog3/build/hello_test[1]_tests.cmake")
-  include("/u/wzhang/cs429/prog3/build/hello_test[1]_tests.cmake")
-else()
-  add_test(hello_test_NOT_BUILT hello_test_NOT_BUILT)
-endif()
