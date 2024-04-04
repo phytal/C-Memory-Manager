@@ -209,7 +209,7 @@ void* buddy_alloc(size_t size) {
             i--; // Move to the next lower level
             best_block = buddy1;
         }
-        write_block(best_block, block_size-META_SIZE);
+        write_block(best_block, block_size);
 
         return (void*)(best_block); // Return pointer to start of block
     } else {
@@ -222,7 +222,7 @@ void* buddy_alloc(size_t size) {
 
 void *t_malloc (size_t size) {
     // Ensure size is a multiple of 4 for alignment
-    size += META_SIZE;
+    // size += META_SIZE;
     size = (size + 3) & (~3);
 
     void* ptr = NULL;
