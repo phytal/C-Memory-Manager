@@ -34,7 +34,7 @@ void* align_ptr(void* ptr) {
 // Function to add memory to the linked list
 // Precondition: The current block is the last block in the linked list. 
 void add_mem(struct MemoryBlock* current, size_t size) {
-    if (size + META_SIZE > PAGE_SIZE) {
+    if (size + META_SIZE > PAGE_SIZE) { // If the requested size is larger than a page
         void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
         new_mem_start = align_ptr(new_mem_start);
@@ -42,13 +42,13 @@ void add_mem(struct MemoryBlock* current, size_t size) {
         // Create a new memory block structure
         struct MemoryBlock* new_block = (struct MemoryBlock*)new_mem_start;
         new_block->size = size;
-        new_block->free = false;
+        new_block->free = true;
         new_block->prev = current;
         new_block->next = NULL;
 
         // Insert the new block into the linked list
         current->next = new_block;
-    } else {
+    } else { // If the requested size is smaller than a page
         void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
         new_mem_start = align_ptr(new_mem_start);
@@ -69,7 +69,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
 // Precondition: The size is a multiple of 4.
 void write_block(struct MemoryBlock* current, size_t size) {
     // If the current block is larger than the requested size, split it
-    if (alloc_strat != BUDDY && current->size >= size) {
+    if (alloc_strat != BUDDY && current->size >= size + META_SIZE + 4) {
         // Create a new block for the remaining free memory
         struct MemoryBlock* remaining = (struct MemoryBlock*)((char*)current + META_SIZE + size);
         
@@ -82,9 +82,11 @@ void write_block(struct MemoryBlock* current, size_t size) {
         current->size = size;
         current->free = false;
         current->next = remaining;
+        printf("A\n");
     } else {
         // If the current block is just the right size (+3), mark it as allocated
         current->free = false;
+        printf("B\n");
     }
 }
 
@@ -283,6 +285,8 @@ void *t_malloc (size_t size) {
 
     // Create memory block structure
     struct MemoryBlock* block = (struct MemoryBlock*)ptr;
+
+    printf("Block allocated.\n");
     printf("Block size: %lu\n", block->size);
     printf("Block free: %d\n", block->free);
     printf("Block next: %p\n", block->next);
@@ -312,10 +316,14 @@ void t_free (void *ptr) {
             if (alloc_strat == BUDDY && current->size != current->prev->size) {
                 merged_left = false;
             } else {
-                current->prev->size += current->size + META_SIZE;
-                current->prev->next = current->next;
-                current = current->prev;
-                merged_left = true;
+                if ((char*)current->prev+current->prev->size+META_SIZE != (char*)current) {
+                    merged_left = false;
+                } else {
+                    current->prev->size += current->size + META_SIZE;
+                    current->prev->next = current->next;
+                    current = current->prev;
+                    merged_left = true;
+                }
             }
         } else {
             merged_left = false;
@@ -324,15 +332,20 @@ void t_free (void *ptr) {
             if (alloc_strat == BUDDY && current->size != current->next->size) {
                 merged_right = false;
             } else {
-                current->size += current->next->size + META_SIZE;
-                current->next = current->next->next;
-                merged_right = true;
+                if ((char*)current+current->size+META_SIZE != (char*)current->next) {
+                    merged_right = false;
+                } else {
+                    current->size += current->next->size + META_SIZE;
+                    current->next = current->next->next;
+                    merged_right = true;
+                }
             }
         } else {
             merged_right = false;
         }
     }
 
+    printf("Block freed.\n");
     printf("Block size: %lu\n", current->size);
     printf("Block free: %d\n", current->free);
     printf("Block next: %p\n", current->next);
