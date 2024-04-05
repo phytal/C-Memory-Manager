@@ -44,15 +44,22 @@ void add_mem(struct MemoryBlock* current, size_t size) {
     new_mem_start = align_ptr(new_mem_start);
 
     // Create a new memory block structure
-    struct MemoryBlock* new_block = (struct MemoryBlock*)new_mem_start;
-    new_block->size = size;
-    new_block->free = false;
-    new_block->next = NULL;
-    new_block->prev = current;
+    struct MemoryBlock* new_used_block = (struct MemoryBlock*)new_mem_start;
+    new_used_block->size = size;
+    new_used_block->free = false;
+    new_used_block->prev = current;
+
+    struct MemoryBlock* new_free_block = (struct MemoryBlock*)((char*)new_mem_start + META_SIZE + size);
+    new_free_block->size = PAGE_SIZE - META_SIZE - size;
+    new_free_block->free = true;
+    new_free_block->next = NULL;
+    new_free_block->prev = new_used_block;
+
+    new_used_block->next = new_free_block;
 
     // Insert the new block into the linked list
-    current->next = new_block;
-    new_block->prev = current;
+    current->next = new_used_block;
+    new_used_block->prev = current;
 }
 
 // Function to write a memory block with the given size
