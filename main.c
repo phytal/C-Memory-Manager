@@ -67,9 +67,13 @@ int main() {
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         size_t size = (rand() % MAX_SIZE) + 1;
         void* block = t_malloc(size);
-        t_free(block);
+        // t_free(block);
     }
     printf("Random allocation and free success.\n");
+
+    t_gcollect();
+    printf("GC success.\n");
+
 
     // // Allocate a large number of blocks, store the pointers, then free them
     // void** blocks = malloc(NUM_ITERATIONS * sizeof(void*));
