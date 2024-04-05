@@ -40,10 +40,7 @@ void* align_ptr(void* ptr) {
 // Precondition: The size is a multiple of 4.
 void add_mem(struct MemoryBlock* current, size_t size) {
     void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if (new_mem_start == MAP_FAILED) {
-        fprintf(stderr, "Memory allocation failed");
-        exit(EXIT_FAILURE);
-    }
+
     new_mem_start = align_ptr(new_mem_start);
 
     // Create a new memory block structure
@@ -54,12 +51,8 @@ void add_mem(struct MemoryBlock* current, size_t size) {
     new_block->prev = current;
 
     // Insert the new block into the linked list
-    if (current == NULL) { // should not happen but just in case
-        head = new_block;
-    } else {
-        current->next = new_block;
-        new_block->prev = current;
-    }
+    current->next = new_block;
+    new_block->prev = current;
 }
 
 // Function to write a memory block with the given size
@@ -70,15 +63,13 @@ void write_block(struct MemoryBlock* current, size_t size) {
         // Create a new block for the remaining free memory
         struct MemoryBlock* remaining = (struct MemoryBlock*)((char*)current + META_SIZE + size);
         
-        // char* diff = (char*)align_ptr(remaining) - (char*)remaining;
-        remaining = align_ptr(remaining);
         remaining->size = current->size - size - META_SIZE;
         remaining->free = true;
         remaining->next = current->next;
         remaining->prev = current;
 
         // Update the size of the current block and mark it as allocated
-        current->size = size; // + diff
+        current->size = size;
         current->free = false;
         current->next = remaining;
     } else {
