@@ -69,7 +69,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
 // Precondition: The size is a multiple of 4.
 void write_block(struct MemoryBlock* current, size_t size) {
     // If the current block is larger than the requested size, split it
-    if (alloc_strat != BUDDY && current->size >= size + META_SIZE + 4) {
+    if (alloc_strat != BUDDY && current->size >= size) {
         // Create a new block for the remaining free memory
         struct MemoryBlock* remaining = (struct MemoryBlock*)((char*)current + META_SIZE + size);
         
