@@ -37,28 +37,20 @@ void* align_ptr(void* ptr) {
 
 // Function to add memory to the linked list
 // Precondition: The current block is the last block in the linked list. 
-// Precondition: The size is a multiple of 4.
-void add_mem(struct MemoryBlock* current, size_t size) {
+void add_mem(struct MemoryBlock* current) {
     void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     new_mem_start = align_ptr(new_mem_start);
 
     // Create a new memory block structure
-    struct MemoryBlock* new_used_block = (struct MemoryBlock*)new_mem_start;
-    new_used_block->size = size;
-    new_used_block->free = false;
-    new_used_block->prev = current;
-
-    struct MemoryBlock* new_free_block = (struct MemoryBlock*)((char*)new_mem_start + META_SIZE + size);
-    new_free_block->size = PAGE_SIZE - META_SIZE - size;
-    new_free_block->free = true;
-    new_free_block->next = NULL;
-    new_free_block->prev = new_used_block;
-
-    new_used_block->next = new_free_block;
+    struct MemoryBlock* new_block = (struct MemoryBlock*)new_mem_start;
+    new_block->size = PAGE_SIZE - META_SIZE;
+    new_block->free = true;
+    new_block->prev = current;
+    new_block->next = NULL;
 
     // Insert the new block into the linked list
-    current->next = new_used_block;
+    current->next = new_block;
 }
 
 // Function to write a memory block with the given size
@@ -89,10 +81,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     stack_bottom = stack_bot;
 
     mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if (mem_start == MAP_FAILED) {
-        fprintf(stderr, "Memory allocation failed");
-        exit(EXIT_FAILURE);
-    }
+
     mem_start = align_ptr(mem_start);
 
     head = (struct MemoryBlock*)mem_start;
@@ -117,7 +106,8 @@ void* first_fit(size_t size) {
     }
 
     // No suitable block found, must resize
-    add_mem(current, size);
+    add_mem(current);
+    write_block(current->next, size);
 
     return (void*)(current->next);
 }
@@ -140,7 +130,8 @@ void* best_fit(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     }
     // No suitable block found
-    add_mem(current, size);
+    add_mem(current);
+    write_block(current->next, size);
 
     return (void*)(current->next);
 }
@@ -164,7 +155,8 @@ void* worst_fit(size_t size) {
     }
     
     // No suitable block found
-    add_mem(current, size);
+    add_mem(current);
+    write_block(current->next, size);
 
     return (void*)(current->next);
 }
@@ -219,7 +211,8 @@ void* buddy_alloc(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     } else {
         // No suitable block found
-        add_mem(current, block_size);
+        add_mem(current);
+        write_block(current->next, block_size);
 
         return (void*)(current->next);
     }
@@ -227,7 +220,6 @@ void* buddy_alloc(size_t size) {
 
 void *t_malloc (size_t size) {
     // Ensure size is a multiple of 4 for alignment
-    // size += META_SIZE;
     size = (size + 3) & (~3);
 
     void* ptr = NULL;
