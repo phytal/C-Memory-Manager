@@ -6,7 +6,7 @@
 int main() {
     // Example usage
     int* temp;
-    t_init(FIRST_FIT, temp);
+    t_init(BUDDY, temp);
     char* ptr3 = (char*)t_malloc(1);
     printf("Memory allocation success.\n");
     ptr3[0] = 'a';

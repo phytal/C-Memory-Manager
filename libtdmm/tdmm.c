@@ -212,7 +212,33 @@ void* buddy_alloc(size_t size) {
     } else {
         // No suitable block found
         add_mem(current);
-        write_block(current->next, block_size);
+        best_block = current->next;
+
+        // Split larger blocks until reaching the required level
+        int best_block_size = best_block->size;
+        int i = 0;
+        while (best_block_size > 0) {
+            best_block_size -= META_SIZE;
+            best_block_size >>= 1;
+            i++;
+        }
+        while (i > level) {
+            // Split the block into two buddies
+            size_t new_size = (best_block->size-META_SIZE) / 2;
+            struct MemoryBlock* buddy1 = (struct MemoryBlock*)((char*)best_block);
+            struct MemoryBlock* buddy2 = (struct MemoryBlock*)((char*)best_block + new_size);
+            buddy1->size = new_size;
+            buddy2->size = new_size;
+            buddy1->free = true;
+            buddy2->free = true;
+            buddy2->next = best_block->next;
+            buddy2->prev = buddy1;
+            buddy1->next = buddy2;
+
+            i--; // Move to the next lower level
+            best_block = buddy1;
+        }
+        write_block(best_block, block_size);
 
         return (void*)(current->next);
     }
