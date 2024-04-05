@@ -1,10 +1,6 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "tdmm.h"
@@ -37,7 +33,12 @@ void* align_ptr(void* ptr) {
 
 // Function to add memory to the linked list
 // Precondition: The current block is the last block in the linked list. 
-void add_mem(struct MemoryBlock* current) {
+void add_mem(struct MemoryBlock* current, size_t size) {
+    if (size > PAGE_SIZE) {
+        fprintf(stderr, "Memory allocation failed: requested size exceeds page size.\n");
+        return;
+    }
+    
     void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     new_mem_start = align_ptr(new_mem_start);
