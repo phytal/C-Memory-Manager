@@ -303,25 +303,25 @@ void t_free (void *ptr) {
     }
 
     // Update the linked list here
-    // struct MemoryBlock* prev = NULL;
-    // current = head;
-    // while (current) {
-    //     if (current->free && current->next && current->next->free) {
-    //         // Remove current from the linked list
-    //         if (prev == NULL) {
-    //             head = current->next;
-    //         } else {
-    //             prev->next = current->next;
-    //         }
+    struct MemoryBlock* prev = NULL;
+    current = head;
+    while (current) {
+        if (current->free && current->next && current->next->free) {
+            // Remove current from the linked list
+            if (prev == NULL) {
+                head = current->next;
+            } else {
+                prev->next = current->next;
+            }
 
-    //         // Merge current with the next block
-    //         current->size += current->next->size + META_SIZE;
-    //         current->next = current->next->next;
-    //     } else {
-    //         prev = current;
-    //         current = current->next;
-    //     }
-    // }
+            // Merge current with the next block
+            current->size += current->next->size + META_SIZE;
+            current->next = current->next->next;
+        } else {
+            prev = current;
+            current = current->next;
+        }
+    }
 
     printf("Block size: %lu\n", current->size);
     printf("Block free: %d\n", current->free);
