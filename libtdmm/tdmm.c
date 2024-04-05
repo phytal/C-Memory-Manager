@@ -43,7 +43,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
     // Ensure size is a multiple of 4 for alignment
     // size = (size + 3) & (~3);
 
-    void* new_mem_start = mmap(NULL, size + META_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (new_mem_start == MAP_FAILED) {
         fprintf(stderr, "Memory allocation failed");
         exit(EXIT_FAILURE);
@@ -274,39 +274,57 @@ void t_free (void *ptr) {
     block->free = true;
 
     // Merge adjacent free blocks here
-    struct MemoryBlock* current = head;
-    while (current && current->next) {
-        if (current->free && current->next != NULL && current->next->free) {
-            current->size += current->next->size + META_SIZE;
-            current->next = current->next->next;
-        } if (current->free && current->prev != NULL && current->prev->free) {
+    struct MemoryBlock* current = block;
+    bool merged_left = false;
+    bool merged_right = false;
+    while (!merged_left && !merged_right) {
+        if (current->free && current->prev != NULL && current->prev->free) {
+            if (alloc_strat == BUDDY && current->size != current->prev->size) {
+                break;
+            }
             current->prev->size += current->size + META_SIZE;
             current->prev->next = current->next;
+            current = current->prev;
         } else {
+            merged_left = true;
+        }
+        if (current->free && current->next != NULL && current->next->free) {
+            if (alloc_strat == BUDDY && current->size != current->next->size) {
+                break;
+            }
+            current->size += current->next->size + META_SIZE;
+            current->next = current->next->next;
             current = current->next;
+        } else {
+            merged_right = true;
         }
     }
 
     // Update the linked list here
-    struct MemoryBlock* prev = NULL;
-    current = head;
-    while (current) {
-        if (current->free && current->next && current->next->free) {
-            // Remove current from the linked list
-            if (prev == NULL) {
-                head = current->next;
-            } else {
-                prev->next = current->next;
-            }
+    // struct MemoryBlock* prev = NULL;
+    // current = head;
+    // while (current) {
+    //     if (current->free && current->next && current->next->free) {
+    //         // Remove current from the linked list
+    //         if (prev == NULL) {
+    //             head = current->next;
+    //         } else {
+    //             prev->next = current->next;
+    //         }
 
-            // Merge current with the next block
-            current->size += current->next->size + META_SIZE;
-            current->next = current->next->next;
-        } else {
-            prev = current;
-            current = current->next;
-        }
-    }
+    //         // Merge current with the next block
+    //         current->size += current->next->size + META_SIZE;
+    //         current->next = current->next->next;
+    //     } else {
+    //         prev = current;
+    //         current = current->next;
+    //     }
+    // }
+
+    printf("Block size: %lu\n", current->size);
+    printf("Block free: %d\n", current->free);
+    printf("Block next: %p\n", current->next);
+    printf("Block prev: %p\n", current->prev);
 }
 
 // Function to check if a given pointer is within the allocated memory regions

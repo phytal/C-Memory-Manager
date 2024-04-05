@@ -44,5 +44,15 @@ int main() {
     t_free(ptr2);
     t_free(ptr3);
     printf("Memory free success.\n");
+
+    char* ptr4 = (char*)t_malloc(3 * sizeof(char));
+    printf("Memory allocation success.\n");
+    ptr2[0] = 'a';
+    ptr2[1] = 'b';
+    ptr2[2] = 'c';
+
+    printf("char at ind 0: %c\n", ptr2[0]);
+    printf("char at ind 1: %c\n", ptr2[1]);
+    printf("char at ind 2: %c\n", ptr2[2]);
     return 0;
 }
