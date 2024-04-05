@@ -226,7 +226,7 @@ void* buddy_alloc(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     } else {
         // No suitable block found
-        add_mem(current, block_size - META_SIZE);
+        add_mem(current, block_size);
         best_block = current->next;
 
         // Split larger blocks until reaching the required level

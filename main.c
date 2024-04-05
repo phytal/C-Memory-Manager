@@ -10,7 +10,7 @@
 int main() {
     // Example usage
     int temp;
-    t_init(FIRST_FIT, &temp);
+    t_init(BUDDY, &temp);
     printf("Current block: %d\n", t_malloc(5072));
     char* ptr3 = (char*)t_malloc(1);
     printf("Memory allocation success.\n");
@@ -67,12 +67,12 @@ int main() {
     for (int i = 0; i < NUM_ITERATIONS; i++) {
         size_t size = (rand() % MAX_SIZE) + 1;
         void* block = t_malloc(size);
-        // t_free(block);
+        t_free(block);
     }
     printf("Random allocation and free success.\n");
 
-    t_gcollect();
-    printf("GC success.\n");
+    // t_gcollect();
+    // printf("GC success.\n");
 
 
     // // Allocate a large number of blocks, store the pointers, then free them
