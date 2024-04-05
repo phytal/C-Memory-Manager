@@ -7,7 +7,7 @@ int main() {
     // Example usage
     int* temp;
     t_init(FIRST_FIT, temp);
-    printf("Current block: %d\n", t_malloc(4072));
+    printf("Current block: %d\n", t_malloc(5072));
     char* ptr3 = (char*)t_malloc(1);
     printf("Memory allocation success.\n");
     ptr3[0] = 'a';
@@ -55,5 +55,8 @@ int main() {
     printf("char at ind 0: %c\n", ptr2[0]);
     printf("char at ind 1: %c\n", ptr2[1]);
     printf("char at ind 2: %c\n", ptr2[2]);
+
+    t_gcollect();
+    printf("GC success.\n");
     return 0;
 }

@@ -34,24 +34,34 @@ void* align_ptr(void* ptr) {
 // Function to add memory to the linked list
 // Precondition: The current block is the last block in the linked list. 
 void add_mem(struct MemoryBlock* current, size_t size) {
-    if (size > PAGE_SIZE) {
-        fprintf(stderr, "Memory allocation failed: requested size exceeds page size.\n");
-        return;
+    if (size + META_SIZE > PAGE_SIZE) {
+        void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+        new_mem_start = align_ptr(new_mem_start);
+
+        // Create a new memory block structure
+        struct MemoryBlock* new_block = (struct MemoryBlock*)new_mem_start;
+        new_block->size = size;
+        new_block->free = false;
+        new_block->prev = current;
+
+        // Insert the new block into the linked list
+        current->next = new_block;
+    } else {
+        void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+
+        new_mem_start = align_ptr(new_mem_start);
+
+        // Create a new memory block structure
+        struct MemoryBlock* new_block = (struct MemoryBlock*)new_mem_start;
+        new_block->size = PAGE_SIZE - META_SIZE;
+        new_block->free = true;
+        new_block->prev = current;
+        new_block->next = NULL;
+
+        // Insert the new block into the linked list
+        current->next = new_block;
     }
-    
-    void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-
-    new_mem_start = align_ptr(new_mem_start);
-
-    // Create a new memory block structure
-    struct MemoryBlock* new_block = (struct MemoryBlock*)new_mem_start;
-    new_block->size = PAGE_SIZE - META_SIZE;
-    new_block->free = true;
-    new_block->prev = current;
-    new_block->next = NULL;
-
-    // Insert the new block into the linked list
-    current->next = new_block;
 }
 
 // Function to write a memory block with the given size
@@ -107,7 +117,7 @@ void* first_fit(size_t size) {
     }
 
     // No suitable block found, must resize
-    add_mem(current);
+    add_mem(current, size);
     write_block(current->next, size);
 
     return (void*)(current->next);
@@ -131,7 +141,7 @@ void* best_fit(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     }
     // No suitable block found
-    add_mem(current);
+    add_mem(current, size);
     write_block(current->next, size);
 
     return (void*)(current->next);
@@ -156,7 +166,7 @@ void* worst_fit(size_t size) {
     }
     
     // No suitable block found
-    add_mem(current);
+    add_mem(current, size);
     write_block(current->next, size);
 
     return (void*)(current->next);
@@ -212,7 +222,7 @@ void* buddy_alloc(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     } else {
         // No suitable block found
-        add_mem(current);
+        add_mem(current, block_size);
         best_block = current->next;
 
         // Split larger blocks until reaching the required level
