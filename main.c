@@ -3,10 +3,14 @@
 #include <sys/mman.h>
 #include "libtdmm/tdmm.h"
 
+#define MAX_SIZE 10096
+#define NUM_ITERATIONS 10000
+
+
 int main() {
     // Example usage
-    int* temp;
-    t_init(FIRST_FIT, temp);
+    int temp;
+    t_init(FIRST_FIT, &temp);
     printf("Current block: %d\n", t_malloc(5072));
     char* ptr3 = (char*)t_malloc(1);
     printf("Memory allocation success.\n");
@@ -56,7 +60,28 @@ int main() {
     printf("char at ind 1: %c\n", ptr2[1]);
     printf("char at ind 2: %c\n", ptr2[2]);
 
-    t_gcollect();
-    printf("GC success.\n");
+    // t_gcollect();
+    // printf("GC success.\n");
+
+    // Allocate and immediately free a large number of blocks
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
+        size_t size = (rand() % MAX_SIZE) + 1;
+        void* block = t_malloc(size);
+        t_free(block);
+    }
+    printf("Random allocation and free success.\n");
+
+    // // Allocate a large number of blocks, store the pointers, then free them
+    // void** blocks = malloc(NUM_ITERATIONS * sizeof(void*));
+    // for (int i = 0; i < NUM_ITERATIONS; i++) {
+    //     size_t size = (rand() % MAX_SIZE) + 1;
+    //     blocks[i] = t_malloc(size);
+    // }
+    // for (int i = 0; i < NUM_ITERATIONS; i++) {
+    //     t_free(blocks[i]);
+    // }
+    // free(blocks);
+    // printf("Random allocation and free success.\n");
+
     return 0;
 }

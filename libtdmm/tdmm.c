@@ -44,6 +44,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
         new_block->size = size;
         new_block->free = false;
         new_block->prev = current;
+        new_block->next = NULL;
 
         // Insert the new block into the linked list
         current->next = new_block;
@@ -142,6 +143,7 @@ void* best_fit(size_t size) {
     }
     // No suitable block found
     add_mem(current, size);
+
     write_block(current->next, size);
 
     return (void*)(current->next);
@@ -222,7 +224,7 @@ void* buddy_alloc(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     } else {
         // No suitable block found
-        add_mem(current, block_size);
+        add_mem(current, block_size - META_SIZE);
         best_block = current->next;
 
         // Split larger blocks until reaching the required level
@@ -296,7 +298,7 @@ void t_free (void *ptr) {
     }
 
     // Find the corresponding memory block
-    struct MemoryBlock* block = (struct MemoryBlock*)((char*)ptr - META_SIZE);
+    struct MemoryBlock* block = (struct MemoryBlock*)ptr - 1;
 
     // Mark the block as free
     block->free = true;
