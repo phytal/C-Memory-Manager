@@ -69,7 +69,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
 // Function to write a memory block with the given size
 void write_block(struct MemoryBlock* current, size_t size) {
     // If the current block is larger than the requested size, split it
-    if (current->size >= size + META_SIZE + 4) {
+    if (alloc_strat != BUDDY && current->size >= size + META_SIZE + 4) {
         // Create a new block for the remaining free memory
         struct MemoryBlock* remaining = (struct MemoryBlock*)((char*)current + META_SIZE + size);
         
@@ -94,7 +94,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     alloc_strat = strat;
     stack_bottom = stack_bot;
 
-    mem_start = mmap(NULL, PAGE_SIZE*10, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    mem_start = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (mem_start == MAP_FAILED) {
         fprintf(stderr, "Memory allocation failed");
         exit(EXIT_FAILURE);
@@ -111,13 +111,15 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
 // Function to allocate memory using First Fit policy
 void* first_fit(size_t size) {
     struct MemoryBlock* current = head;
-    while (current && (current->next || current->prev == NULL)) {
+    while (current) {
         if (current->free && current->size >= size) {
             write_block(current, size);
 
             return (void*)(current); // Return pointer to start of block
         }
-        current = current->next;
+        if (current->next)
+            current = current->next;
+        else break;
     }
 
     // No suitable block found, must resize
@@ -130,11 +132,13 @@ void* first_fit(size_t size) {
 void* best_fit(size_t size) {
     struct MemoryBlock* best_block = NULL;
     struct MemoryBlock* current = head;
-    while (current && (current->next || current->prev == NULL)) {
+    while (current) {
         if (current->free && current->size >= size && (best_block == NULL || current->size < best_block->size)) {
             best_block = current;
         }
-        current = current->next;
+        if (current->next)
+            current = current->next;
+        else break;
     }
     if (best_block) {
         write_block(best_block, size);
@@ -151,11 +155,13 @@ void* best_fit(size_t size) {
 void* worst_fit(size_t size) {
     struct MemoryBlock* worst_block = NULL;
     struct MemoryBlock* current = head;
-    while (current && (current->next || current->prev == NULL)) {
+    while (current) {
         if (current->free && current->size >= size && (worst_block == NULL || current->size > worst_block->size)) {
             worst_block = current;
         }
-        current = current->next;
+        if (current->next)
+            current = current->next;
+        else break;
     }
     if (worst_block) {
         write_block(worst_block, size);
@@ -181,19 +187,21 @@ void* buddy_alloc(size_t size) {
     // Find the best block to allocate from
     struct MemoryBlock* best_block = NULL;
     struct MemoryBlock* current = head;
-    while (current && (current->next || current->prev == NULL)) {
+    while (current) {
         if (current->free && current->size >= block_size && (best_block == NULL || current->size < best_block->size)) {
             best_block = current;
         }
-        current = current->next;
+        if (current->next)
+            current = current->next;
+        else break;
     }
     if (best_block) {
         // Split larger blocks until reaching the required level
         int best_block_size = best_block->size;
         int i = 0;
         while (best_block_size > 0) {
-            best_block_size >>= 1;
             best_block_size -= META_SIZE;
+            best_block_size >>= 1;
             i++;
         }
         while (i > level) {
@@ -249,7 +257,7 @@ void *t_malloc (size_t size) {
     }
 
     // Align pointer to ensure it's a multiple of 4
-    ptr = align_ptr(ptr);
+    // ptr = align_ptr(ptr);
 
     // Create memory block structure
     struct MemoryBlock* block = (struct MemoryBlock*)ptr;
@@ -263,7 +271,7 @@ void *t_malloc (size_t size) {
 }
 
 void t_free (void *ptr) {
-      if (ptr == NULL) {
+    if (ptr == NULL) {
         return; // Nothing to free
     }
 
@@ -275,51 +283,31 @@ void t_free (void *ptr) {
 
     // Merge adjacent free blocks here
     struct MemoryBlock* current = block;
-    bool merged_left = false;
-    bool merged_right = false;
-    while (!merged_left && !merged_right) {
+    bool merged_left = true;
+    bool merged_right = true;
+    while (merged_left || merged_right) {
         if (current->free && current->prev != NULL && current->prev->free) {
             if (alloc_strat == BUDDY && current->size != current->prev->size) {
-                break;
+                merged_left = false;
+            } else {
+                current->prev->size += current->size + META_SIZE;
+                current->prev->next = current->next;
+                current = current->prev;
+                merged_left = true;
             }
-            current->prev->size += current->size + META_SIZE;
-            current->prev->next = current->next;
-            current = current->prev;
-            merged_left = false;
         } else {
-            merged_left = true;
+            merged_left = false;
         }
         if (current->free && current->next != NULL && current->next->free) {
             if (alloc_strat == BUDDY && current->size != current->next->size) {
-                break;
-            }
-            current->size += current->next->size + META_SIZE;
-            current->next = current->next->next;
-            current = current->next;
-            merged_right = false;
-        } else {
-            merged_right = true;
-        }
-    }
-
-    // Update the linked list here
-    struct MemoryBlock* prev = NULL;
-    current = head;
-    while (current) {
-        if (current->free && current->next && current->next->free) {
-            // Remove current from the linked list
-            if (prev == NULL) {
-                head = current->next;
+                merged_right = false;
             } else {
-                prev->next = current->next;
+                current->size += current->next->size + META_SIZE;
+                current->next = current->next->next;
+                merged_right = true;
             }
-
-            // Merge current with the next block
-            current->size += current->next->size + META_SIZE;
-            current->next = current->next->next;
         } else {
-            prev = current;
-            current = current->next;
+            merged_right = false;
         }
     }
 
