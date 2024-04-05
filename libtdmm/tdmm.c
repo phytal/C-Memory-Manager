@@ -285,6 +285,7 @@ void t_free (void *ptr) {
             current->prev->size += current->size + META_SIZE;
             current->prev->next = current->next;
             current = current->prev;
+            merged_left = false;
         } else {
             merged_left = true;
         }
@@ -295,6 +296,7 @@ void t_free (void *ptr) {
             current->size += current->next->size + META_SIZE;
             current->next = current->next->next;
             current = current->next;
+            merged_right = false;
         } else {
             merged_right = true;
         }
