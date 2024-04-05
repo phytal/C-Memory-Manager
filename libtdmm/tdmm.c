@@ -39,7 +39,7 @@ void* align_ptr(void* ptr) {
 // Precondition: The current block is the last block in the linked list. 
 // Precondition: The size is a multiple of 4.
 void add_mem(struct MemoryBlock* current, size_t size) {
-    void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     new_mem_start = align_ptr(new_mem_start);
 
@@ -59,7 +59,6 @@ void add_mem(struct MemoryBlock* current, size_t size) {
 
     // Insert the new block into the linked list
     current->next = new_used_block;
-    new_used_block->prev = current;
 }
 
 // Function to write a memory block with the given size
@@ -89,7 +88,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     alloc_strat = strat;
     stack_bottom = stack_bot;
 
-    mem_start = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (mem_start == MAP_FAILED) {
         fprintf(stderr, "Memory allocation failed");
         exit(EXIT_FAILURE);
