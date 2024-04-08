@@ -358,7 +358,7 @@ void check_valid_pointer(void* ptr) {
     while (current) {
         void* block_start = (void*)(current + 1);
         void* block_end = (void*)((char*)block_start + current->size);
-        if (ptr >= block_start && ptr < block_end) {
+        if (ptr >= block_start && ptr < block_end && current->free == false) {
             current->used = true; // Set the usage bit to 1
             break;
         }
