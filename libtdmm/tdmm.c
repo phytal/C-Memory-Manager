@@ -369,15 +369,20 @@ void check_valid_pointer(void* ptr) {
 // basically if theres a pointer in the stack that points to anywhere in a valid memory block, set the usage bit to 1 (used)
 // if the pointer is not in the stack but still in the heap, set the usage bit to 0 (unused) to be garbage collected
 
-// Function to scan the stack for pointers to allocated memory regions
+// Function to scan the stack and heap for pointers to allocated memory regions
 void t_gcollect (void) {
     char *temp;
     char *sp = temp + (size_t)(char*)stack_bottom;
 
-    // void* sp = temp + (size_t)(char*)stack_bottom;
-    for (char* start = sp; start < (char*)stack_bottom-sizeof(char*); start++) { 
-        check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
+    // Scan the stack for pointers to allocated memory regions
+    for (char** current = (char**)sp; current < &temp; current++) {
+        check_valid_pointer(*current);
     }
+
+    // // void* sp = temp + (size_t)(char*)stack_bottom;
+    // for (char* start = sp; start < (char*)stack_bottom-sizeof(char*); start++) { 
+    //     check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
+    // }
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
