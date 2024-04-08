@@ -71,8 +71,8 @@ int main() {
     }
     printf("Random allocation and free success.\n");
 
-    // t_gcollect();
-    // printf("GC success.\n");
+    t_gcollect();
+    printf("GC success.\n");
 
 
     // // Allocate a large number of blocks, store the pointers, then free them

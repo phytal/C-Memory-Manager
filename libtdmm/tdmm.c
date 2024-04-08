@@ -384,11 +384,14 @@ void gcollect_mark_region(void* start, void* end) {
 // Function to scan the stack and heap for pointers to allocated memory regions
 void t_gcollect (void) {
     char *temp;
+    printf("Stack bottom: %p\n", stack_bottom);
+    printf("Temp: %p\n", &temp);
     char *sp = stack_bottom - (size_t)(char*)temp;
+    printf("SP: %p\n", sp);
 
     // Scan the stack for pointers to allocated memory regions
-    for (char* current = (char*)sp; current < (char*)stack_bottom; current++) {
-        check_valid_pointer(*current);
+    for (char* current = temp; current < (char*)stack_bottom; current++) {
+        check_valid_pointer(current);
     }
 
     // Scan the heap for pointers to allocated memory regions
