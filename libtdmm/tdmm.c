@@ -379,6 +379,13 @@ void t_gcollect (void) {
         check_valid_pointer(*current);
     }
 
+    // Scan the heap for pointers to allocated memory regions
+    for (struct MemoryBlock* current = head; current; current = current->next) {
+        for (char** current_ptr = (char**)(current + 1); current_ptr < (char**)((char*)current + current->size); current_ptr++) {
+            check_valid_pointer(*current_ptr);
+        }
+    }
+
     // // void* sp = temp + (size_t)(char*)stack_bottom;
     // for (char* start = sp; start < (char*)stack_bottom-sizeof(char*); start++) { 
     //     check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
