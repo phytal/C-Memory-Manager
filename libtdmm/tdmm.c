@@ -226,7 +226,7 @@ void* buddy_alloc(size_t size) {
         return (void*)(best_block); // Return pointer to start of block
     } else {
         // No suitable block found
-        add_mem(current, block_size);
+        add_mem(current, block_size - META_SIZE);
         best_block = current->next;
 
         // Split larger blocks until reaching the required level
@@ -374,7 +374,7 @@ void t_gcollect (void) {
     char *temp;
     // char *sp = temp + (size_t)(char*)stack_bottom;
 
-    void* sp = &temp;
+    void* sp = &temp + (size_t)(char*)stack_bottom;
     for (char* start = sp; start < (char*)stack_bottom; start++) { 
         check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
     }
