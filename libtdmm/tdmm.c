@@ -358,9 +358,21 @@ void check_valid_pointer(void* ptr) {
     while (current) {
         void* block_start = (void*)(current + 1);
         void* block_end = (void*)((char*)block_start + current->size);
-        if (ptr >= block_start && ptr < block_end && current->free == false) {
+        if (ptr >= block_start && ptr < block_end) {
             current->used = true; // Set the usage bit to 1
             break;
+        }
+        current = current->next;
+    }
+}
+
+void gcollect_mark_region(void* start, void* end) {
+    struct MemoryBlock* current = head;
+    while (current) {
+        void* block_start = (void*)(current + 1);
+        void* block_end = (void*)((char*)block_start + current->size);
+        if (block_start >= start && block_end <= end) {
+            current->used = true; // Set the usage bit to 1
         }
         current = current->next;
     }
@@ -372,16 +384,16 @@ void check_valid_pointer(void* ptr) {
 // Function to scan the stack and heap for pointers to allocated memory regions
 void t_gcollect (void) {
     char *temp;
-    char *sp = temp + (size_t)(char*)stack_bottom;
+    char *sp = stack_bottom - (size_t)(char*)temp;
 
     // Scan the stack for pointers to allocated memory regions
-    for (char** current = (char**)sp; current < &temp; current++) {
+    for (char* current = (char*)sp; current < (char*)stack_bottom; current++) {
         check_valid_pointer(*current);
     }
 
     // Scan the heap for pointers to allocated memory regions
     for (struct MemoryBlock* current = head; current; current = current->next) {
-        for (char** current_ptr = (char**)(current + 1); current_ptr < (char**)((char*)current + current->size); current_ptr++) {
+        for (char* current_ptr = (char*)(current + 1); current_ptr < (char*)((char*)current + current->size); current_ptr++) {
             check_valid_pointer(*current_ptr);
         }
     }
