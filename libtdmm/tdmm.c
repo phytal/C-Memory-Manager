@@ -403,17 +403,17 @@ void t_gcollect (void) {
     }
 
     // Scan the heap for pointers to allocated memory regions
-    for (struct MemoryBlock* current = head; current; current = current->next) {
-        for (char* current_ptr = (char*)(current + 1); current_ptr < (char*)((char*)current + current->size); current_ptr++) {
-            check_valid_pointer(*current_ptr);
-        }
-    }
+    // for (struct MemoryBlock* current = head; current; current = current->next) {
+    //     for (char* current_ptr = (char*)(current + 1); current_ptr < (char*)((char*)current + current->size); current_ptr++) {
+    //         check_valid_pointer(*current_ptr);
+    //     }
+    // }
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
         if (!current->used) {
             t_free((void*)(current + 1));
-            munmap(current, current->size + META_SIZE);
+            // munmap(current, current->size + META_SIZE);
         }
         current->used = false;
     }
