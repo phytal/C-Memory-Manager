@@ -22,6 +22,7 @@ static struct MemoryBlock* head = NULL;
 static alloc_strat_e alloc_strat = 0;
 static void* mem_start = NULL;
 static void* stack_bottom = NULL;
+static void* stack_top = NULL;
 
 // Function to align pointer to multiples of 4
 void* align_ptr(void* ptr) {
@@ -93,6 +94,8 @@ void write_block(struct MemoryBlock* current, size_t size) {
 void t_init (alloc_strat_e strat, void* stack_bot) {
     alloc_strat = strat;
     stack_bottom = stack_bot;
+    char *temp;
+    stack_top = temp;
 
     mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
@@ -366,17 +369,17 @@ void check_valid_pointer(void* ptr) {
     }
 }
 
-void gcollect_mark_region(void* start, void* end) {
-    struct MemoryBlock* current = head;
-    while (current) {
-        void* block_start = (void*)(current + 1);
-        void* block_end = (void*)((char*)block_start + current->size);
-        if (block_start >= start && block_end <= end) {
-            current->used = true; // Set the usage bit to 1
-        }
-        current = current->next;
-    }
-}
+// void gcollect_mark_region(void* start, void* end) {
+//     struct MemoryBlock* current = head;
+//     while (current) {
+//         void* block_start = (void*)(current + 1);
+//         void* block_end = (void*)((char*)block_start + current->size);
+//         if (block_start >= start && block_end <= end) {
+//             current->used = true; // Set the usage bit to 1
+//         }
+//         current = current->next;
+//     }
+// }
 
 // basically if theres a pointer in the stack that points to anywhere in a valid memory block, set the usage bit to 1 (used)
 // if the pointer is not in the stack but still in the heap, set the usage bit to 0 (unused) to be garbage collected
@@ -389,9 +392,14 @@ void t_gcollect (void) {
     char *sp = stack_bottom - (size_t)(char*)temp;
     printf("SP: %p\n", sp);
 
-    // Scan the stack for pointers to allocated memory regions
-    for (char* current = temp; current < (char*)stack_bottom; current++) {
-        check_valid_pointer(current);
+    // // Scan the stack for pointers to allocated memory regions
+    // for (char* current = temp; current < (char*)stack_bottom; current++) {
+    //     check_valid_pointer(current);
+    // }
+
+    // void* sp = temp + (size_t)(char*)stack_bottom;
+    for (char* start = sp; start < (char*)stack_bottom-sizeof(char*); start++) { 
+        check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
     }
 
     // Scan the heap for pointers to allocated memory regions
@@ -401,15 +409,11 @@ void t_gcollect (void) {
         }
     }
 
-    // // void* sp = temp + (size_t)(char*)stack_bottom;
-    // for (char* start = sp; start < (char*)stack_bottom-sizeof(char*); start++) { 
-    //     check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
-    // }
-
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
         if (!current->used) {
             t_free((void*)(current + 1));
+            munmap(current, current->size + META_SIZE);
         }
         current->used = false;
     }
