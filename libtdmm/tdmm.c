@@ -389,7 +389,7 @@ void t_gcollect (void) {
     char *temp;
     printf("Stack bottom: %p\n", stack_bottom);
     printf("Temp: %p\n", &temp);
-    char *sp = stack_bottom - (size_t)(char*)temp;
+    char *sp = stack_bottom + (size_t)(char*)temp;
     printf("SP: %p\n", sp);
 
     // // Scan the stack for pointers to allocated memory regions
