@@ -101,7 +101,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     stack_top = temp;
 
     mem_start = mmap(NULL, (PAGE_SIZE/4) + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    total_size += (PAGE_SIZE/4) + 3;
+    total_size += (PAGE_SIZE/16) + 3;
 
     mem_start = align_ptr(mem_start);
 
