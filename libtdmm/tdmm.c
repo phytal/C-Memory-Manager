@@ -99,7 +99,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     stack_top = temp;
     total_size = 0;
 
-    mem_start = mmap(NULL, 128, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    mem_start = mmap(NULL, (PAGE_SIZE) + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
     mem_start = align_ptr(mem_start);
 
@@ -359,6 +359,18 @@ void t_free (void *ptr) {
     printf("Block prev: %p\n", current->prev);
 }
 
+void t_freeFast (void *ptr) {
+        if (ptr == NULL) {
+        return; // Nothing to free
+    }
+
+    // Find the corresponding memory block
+    struct MemoryBlock* block = (struct MemoryBlock*)ptr - 1;
+
+    // Mark the block as free
+    block->free = true;
+}
+
 // Function to check if a given pointer is within the allocated memory regions
 void check_valid_pointer(void* ptr) {
     struct MemoryBlock* current = head;
@@ -448,7 +460,7 @@ void t_gcollect (void) {
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
         if (!current->used) {
-            t_free((void*)(current + 1));
+            t_freeFast((void*)(current + 1));
         }
         current->used = false;
     }
