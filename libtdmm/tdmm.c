@@ -356,11 +356,11 @@ void t_free (void *ptr) {
 }
 
 // Function to check if a given pointer is within the allocated memory regions
-void check_valid_pointer(void* ptr) {
+void check_valid_pointer(long ptr) {
     struct MemoryBlock* current = head;
     while (current) {
-        void* block_start = (void*)(current + 1);
-        void* block_end = (void*)((char*)block_start + current->size);
+        long block_start = (long)(current + 1);
+        long block_end = (long)((char*)block_start + current->size);
         if (ptr >= block_start && ptr < block_end) {
             current->used = true; // Set the usage bit to 1
             break;
@@ -402,18 +402,21 @@ void t_gcollect (void) {
         check_valid_pointer((long*)((void*)start)); // Check if the pointer is valid
     }
 
+    printf("Stack scanned.\n");
+
     // Scan the heap for pointers to allocated memory regions
-    // for (struct MemoryBlock* current = head; current; current = current->next) {
-    //     for (char* current_ptr = (char*)(current + 1); current_ptr < (char*)((char*)current + current->size); current_ptr++) {
-    //         check_valid_pointer(*current_ptr);
-    //     }
-    // }
+    for (struct MemoryBlock* current = head; current; current = current->next) {
+        for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size); current_ptr++) {
+            check_valid_pointer((long*)(void*)current_ptr);
+        }
+    }
+
+    printf("Heap scanned.\n");
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
         if (!current->used) {
             t_free((void*)(current + 1));
-            // munmap(current, current->size + META_SIZE);
         }
         current->used = false;
     }
