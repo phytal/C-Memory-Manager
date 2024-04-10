@@ -38,6 +38,7 @@ void* align_ptr(void* ptr) {
 void add_mem(struct MemoryBlock* current, size_t size) {
     if (size + META_SIZE > PAGE_SIZE) { // If the requested size is larger than a page
         void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        total_size += size + META_SIZE + 3;
 
         new_mem_start = align_ptr(new_mem_start);
 
@@ -52,6 +53,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
         current->next = new_block;
     } else { // If the requested size is smaller than a page
         void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        total_size += PAGE_SIZE + 3;
 
         new_mem_start = align_ptr(new_mem_start);
 
@@ -99,6 +101,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     stack_top = temp;
 
     mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    total_size += PAGE_SIZE + 3;
 
     mem_start = align_ptr(mem_start);
 
@@ -296,8 +299,6 @@ void *t_malloc (size_t size) {
     printf("Block next: %p\n", block->next);
     printf("Block prev: %p\n", block->prev);
 
-    total_size += block->size;
-
     // Return pointer to user-visible memory region
     return (void*)(block + 1);
 }
@@ -365,7 +366,7 @@ void check_valid_pointer(void* ptr) {
     while (current) {
         void* block_start = (void*)(current + 1);
         void* block_end = (void*)((char*)block_start + current->size);
-        if (ptr >= block_start && ptr < block_end && current->size % 4 == 0) {
+        if (ptr >= block_start && ptr <= block_end && current->size % 4 == 0) {
             current->used = true; // Set the usage bit to 1
             break;
         }
@@ -393,6 +394,7 @@ void check_valid_pointer(void* ptr) {
 void t_gcollect (void) {
     long x = 0;
     char * stack_top = (char*)&x;
+    char * secondary = (char *) &x;
     
     // printf("Stack bottom: %p\n", stack_bottom);
     // printf("Temp: %p\n", &temp);
@@ -404,8 +406,24 @@ void t_gcollect (void) {
     //     check_valid_pointer(current);
     // }
 
-    while (stack_top < (char*) stack_bottom + total_size) {
+    while (stack_top < (char*) stack_bottom + PAGE_SIZE) {
         check_valid_pointer(*(void**)stack_top);
+        // void * currRef = *(void **)stack_top;
+
+        // struct MemoryBlock* current = head;
+        // bool founder = false;
+        // while (current != NULL) {
+        //     if (current->free) {
+        //         current = current->next;
+        //         continue;
+        //     }
+        //     if (currRef >= (void*)(current+1) && currRef < (void*)((char*)(current+1) + current->size) && current->size % 4 == 0) {
+        //         current->used = true; // Set the usage bit to 1
+        //         break;
+        //     }
+        //     if(current->next == NULL || founder) break;
+        //     current = current->next;
+        // }
         stack_top++;
     }
 

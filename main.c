@@ -4,7 +4,7 @@
 #include "libtdmm/tdmm.h"
 
 #define MAX_SIZE 10096
-#define NUM_ITERATIONS 10000
+#define NUM_ITERATIONS 100
 
 
 int main() {
