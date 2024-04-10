@@ -64,12 +64,12 @@ int main() {
     // printf("GC success.\n");
 
     // Allocate and immediately free a large number of blocks
-    // for (int i = 0; i < NUM_ITERATIONS; i++) {
-    //     size_t size = (rand() % MAX_SIZE) + 1;
-    //     void* block = t_malloc(size);
-    //     t_free(block);
-    // }
-    // printf("Random allocation and free success.\n");
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
+        size_t size = (rand() % MAX_SIZE) + 1;
+        void* block = t_malloc(size);
+        t_free(block);
+    }
+    printf("Random allocation and free success.\n");
 
     t_gcollect();
     printf("GC success.\n");
