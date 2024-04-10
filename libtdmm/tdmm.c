@@ -38,7 +38,7 @@ void* align_ptr(void* ptr) {
 void add_mem(struct MemoryBlock* current, size_t size) {
     if (size + META_SIZE > PAGE_SIZE) { // If the requested size is larger than a page
         void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-        total_size += size + META_SIZE + 3;
+        total_size ++;
 
         new_mem_start = align_ptr(new_mem_start);
 
@@ -53,7 +53,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
         current->next = new_block;
     } else { // If the requested size is smaller than a page
         void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-        total_size += PAGE_SIZE + 3;
+        total_size ++;
 
         new_mem_start = align_ptr(new_mem_start);
 
@@ -99,9 +99,9 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     stack_bottom = stack_bot;
     char *temp;
     stack_top = temp;
+    total_size = 1;
 
     mem_start = mmap(NULL, (PAGE_SIZE/4) + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    total_size += (PAGE_SIZE/16) + 3;
 
     mem_start = align_ptr(mem_start);
 
