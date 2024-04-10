@@ -406,7 +406,7 @@ void t_gcollect (void) {
     //     check_valid_pointer(current);
     // }
 
-    while (stack_top < (char*) stack_bottom + PAGE_SIZE * 4) {
+    while (stack_top < (char*) stack_bottom + PAGE_SIZE * 10) {
         check_valid_pointer(*(void**)stack_top);
         // void * currRef = *(void **)stack_top;
 
