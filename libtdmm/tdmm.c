@@ -100,8 +100,8 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     char *temp;
     stack_top = temp;
 
-    mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    total_size += PAGE_SIZE + 3;
+    mem_start = mmap(NULL, (PAGE_SIZE/4) + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    total_size += (PAGE_SIZE/4) + 3;
 
     mem_start = align_ptr(mem_start);
 
@@ -406,7 +406,7 @@ void t_gcollect (void) {
     //     check_valid_pointer(current);
     // }
 
-    while (stack_top < (char*) stack_bottom + PAGE_SIZE * 10) {
+    while (stack_top < (char*) stack_bottom + total_size) {
         check_valid_pointer(*(void**)stack_top);
         // void * currRef = *(void **)stack_top;
 
