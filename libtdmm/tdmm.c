@@ -361,14 +361,16 @@ void t_free (void *ptr) {
 // Function to check if a given pointer is within the allocated memory regions
 void check_valid_pointer(void* ptr) {
     struct MemoryBlock* current = head;
+    bool founder = false;
     while (current) {
         void* block_start = (void*)(current + 1);
         void* block_end = (void*)((char*)block_start + current->size);
-        if (ptr >= block_start && ptr < block_end) {
+        if (ptr >= block_start && ptr < block_end && current->size % 4 == 0) {
             current->used = true; // Set the usage bit to 1
             break;
         }
-        current = current->next;
+        if(current->next == NULL || founder) break;
+        else current = current->next;
     }
 }
 
