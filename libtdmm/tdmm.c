@@ -23,6 +23,7 @@ static alloc_strat_e alloc_strat = 0;
 static void* mem_start = NULL;
 static void* stack_bottom = NULL;
 static void* stack_top = NULL;
+static size_t total_size = 0;
 
 // Function to align pointer to multiples of 4
 void* align_ptr(void* ptr) {
@@ -295,6 +296,8 @@ void *t_malloc (size_t size) {
     printf("Block next: %p\n", block->next);
     printf("Block prev: %p\n", block->prev);
 
+    total_size += block->size;
+
     // Return pointer to user-visible memory region
     return (void*)(block + 1);
 }
@@ -399,7 +402,7 @@ void t_gcollect (void) {
     //     check_valid_pointer(current);
     // }
 
-    while (stack_top < (char*) stack_bottom) {
+    while (stack_top < (char*) stack_bottom + total_size) {
         check_valid_pointer(*(void**)stack_top);
         stack_top++;
     }
