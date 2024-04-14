@@ -10,9 +10,9 @@
 
 // Structure to represent a memory block
 struct MemoryBlock {
-    int size;
+    size_t size;
     bool free;
-    bool used;
+    // bool used;
     struct MemoryBlock* prev;
     struct MemoryBlock* next;
 };
@@ -24,6 +24,8 @@ static void* mem_start = NULL;
 static void* stack_bottom = NULL;
 static void* stack_top = NULL;
 static size_t total_size = 0;
+static size_t memory_in_use = 0;
+static size_t total_memory_allocated = 0;
 
 // Function to align pointer to multiples of 4
 void* align_ptr(void* ptr) {
@@ -38,6 +40,7 @@ void* align_ptr(void* ptr) {
 void add_mem(struct MemoryBlock* current, size_t size) {
     if (size + META_SIZE > PAGE_SIZE) { // If the requested size is larger than a page
         void* new_mem_start = mmap(NULL, size + META_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        total_memory_allocated += size + META_SIZE + 3;
 
         new_mem_start = align_ptr(new_mem_start);
 
@@ -52,6 +55,7 @@ void add_mem(struct MemoryBlock* current, size_t size) {
         current->next = new_block;
     } else { // If the requested size is smaller than a page
         void* new_mem_start = mmap(NULL, PAGE_SIZE + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+        total_memory_allocated += PAGE_SIZE + 3;
 
         new_mem_start = align_ptr(new_mem_start);
 
@@ -84,11 +88,11 @@ void write_block(struct MemoryBlock* current, size_t size) {
         current->size = size;
         current->free = false;
         current->next = remaining;
-        printf("A\n");
+        memory_in_use += size;
     } else {
         // If the current block is just the right size (+3), mark it as allocated
         current->free = false;
-        printf("B\n");
+        memory_in_use += current->size;
     }
 }
 
@@ -100,6 +104,7 @@ void t_init (alloc_strat_e strat, void* stack_bot) {
     total_size = 0;
 
     mem_start = mmap(NULL, (PAGE_SIZE) + 3, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    total_memory_allocated += PAGE_SIZE + 3;
 
     mem_start = align_ptr(mem_start);
 
@@ -150,7 +155,6 @@ void* best_fit(size_t size) {
     }
     // No suitable block found
     add_mem(current, size);
-
     write_block(current->next, size);
 
     return (void*)(current->next);
@@ -298,6 +302,7 @@ void *t_malloc (size_t size) {
     printf("Block prev: %p\n", block->prev);
 
     total_size++;
+    printf("Added %d to mem used\n", block->size);
 
     // Return pointer to user-visible memory region
     return (void*)(block + 1);
@@ -310,6 +315,10 @@ void t_free (void *ptr) {
 
     // Find the corresponding memory block
     struct MemoryBlock* block = (struct MemoryBlock*)ptr - 1;
+    
+    // Update memory usage
+    memory_in_use -= block->size;
+    printf("Removed %d from mem used\n", block->size);
 
     // Mark the block as free
     block->free = true;
@@ -360,7 +369,7 @@ void t_free (void *ptr) {
 }
 
 void t_freeFast (void *ptr) {
-        if (ptr == NULL) {
+    if (ptr == NULL) {
         return; // Nothing to free
     }
 
@@ -369,20 +378,29 @@ void t_freeFast (void *ptr) {
 
     // Mark the block as free
     block->free = true;
+
+    memory_in_use -= block->size;
+    printf("Removed %d from mem used\n", block->size);
 }
 
 // Function to check if a given pointer is within the allocated memory regions
 void check_valid_pointer(void* ptr) {
     struct MemoryBlock* current = head;
-    bool founder = false;
     while (current) {
+        if (current->free) {
+            current = current->next;
+            continue;
+        }
         void* block_start = (void*)(current + 1);
         void* block_end = (void*)((char*)block_start + current->size);
-        if (ptr >= block_start && ptr <= block_end && current->size % 4 == 0) {
-            current->used = true; // Set the usage bit to 1
+        if (ptr >= block_start && ptr <= block_end) {
+            if (current->free) {
+                return; // The pointer is valid but the memory block is free
+            }
+            current->size += 1; // Set the usage bit to 1
             break;
         }
-        if(current->next == NULL || founder) break;
+        if(current->next == NULL) break;
         else current = current->next;
     }
 }
@@ -406,7 +424,6 @@ void check_valid_pointer(void* ptr) {
 void t_gcollect (void) {
     long x = 0;
     char * stack_top = (char*)&x;
-    char * secondary = (char *) &x;
     
     // printf("Stack bottom: %p\n", stack_bottom);
     // printf("Temp: %p\n", &temp);
@@ -418,7 +435,7 @@ void t_gcollect (void) {
     //     check_valid_pointer(current);
     // }
 
-    while (stack_top < (char*) stack_bottom + total_size) {
+    while (stack_top < (char*) stack_bottom) {
         check_valid_pointer(*(void**)stack_top);
         // void * currRef = *(void **)stack_top;
 
@@ -447,25 +464,28 @@ void t_gcollect (void) {
     printf("Stack scanned.\n");
 
     // Scan the heap for pointers to allocated memory regions
-    // struct MemoryBlock* current = head;
-    // while (current) {
-    //     for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size); current_ptr++) {
-    //         check_valid_pointer_heap((long)(void*)current_ptr);
-    //     }
-    //     current = current->next;
-    // }
+    struct MemoryBlock* current = head;
+    while (current) {
+        for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size); current_ptr++) {
+            check_valid_pointer((void*)current_ptr);
+        }
+        current = current->next;
+    }
 
     // printf("Heap scanned.\n");
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
-        if (!current->used) {
-            t_freeFast((void*)(current + 1));
+        if (!current->size % 4 == 0) {
+            t_free((void*)(current + 1));
+        } else {
+            current->size -= 1;
         }
-        current->used = false;
     }
 }
 
-// double get_memory_usage_percentage(){
-//     return ((double)memory_in_use / total_memory_allocated) * 100;
-// }
+double t_memutil(){
+    printf("Memory in use: %lu\n", memory_in_use);
+    printf("Total memory allocated: %lu\n", total_memory_allocated);
+    return ((double)memory_in_use / total_memory_allocated) * 100;
+}

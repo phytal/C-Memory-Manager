@@ -43,4 +43,11 @@ void t_free (void *ptr);
  */
 void t_gcollect (void);
 
+/**
+ * Memory utilization as a percentage.
+ * @return Memory utilization as a percentage
+ */
+double t_memutil (void);
+
+
 #endif // TDMM_H_

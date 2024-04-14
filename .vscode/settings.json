@@ -5,6 +5,7 @@
         "bitset": "c",
         "chrono": "c",
         "algorithm": "c",
-        "tdmm.h": "c"
+        "tdmm.h": "c",
+        "time.h": "c"
     }
 }
