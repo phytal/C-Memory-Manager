@@ -464,13 +464,13 @@ void t_gcollect (void) {
     printf("Stack scanned.\n");
 
     // Scan the heap for pointers to allocated memory regions
-    struct MemoryBlock* current = head;
-    while (current) {
-        for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size); current_ptr++) {
-            check_valid_pointer((void*)current_ptr);
-        }
-        current = current->next;
-    }
+    // struct MemoryBlock* current = head;
+    // while (current) {
+    //     for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size); current_ptr++) {
+    //         check_valid_pointer((void*)current_ptr);
+    //     }
+    //     current = current->next;
+    // }
 
     // printf("Heap scanned.\n");
 
