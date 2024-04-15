@@ -295,14 +295,7 @@ void *t_malloc (size_t size) {
     // Create memory block structure
     struct MemoryBlock* block = (struct MemoryBlock*)ptr;
 
-    printf("Block allocated.\n");
-    printf("Block size: %lu\n", block->size);
-    printf("Block free: %d\n", block->free);
-    printf("Block next: %p\n", block->next);
-    printf("Block prev: %p\n", block->prev);
-
     total_size++;
-    printf("Added %d to mem used\n", block->size);
 
     // Return pointer to user-visible memory region
     return (void*)(block + 1);
@@ -318,7 +311,6 @@ void t_free (void *ptr) {
     
     // Update memory usage
     memory_in_use -= block->size;
-    printf("Removed %d from mem used\n", block->size);
 
     // Mark the block as free
     block->free = true;
@@ -360,12 +352,6 @@ void t_free (void *ptr) {
             merged_right = false;
         }
     }
-
-    printf("Block freed.\n");
-    printf("Block size: %lu\n", current->size);
-    printf("Block free: %d\n", current->free);
-    printf("Block next: %p\n", current->next);
-    printf("Block prev: %p\n", current->prev);
 }
 
 void t_freeFast (void *ptr) {
@@ -380,7 +366,6 @@ void t_freeFast (void *ptr) {
     block->free = true;
 
     memory_in_use -= block->size;
-    printf("Removed %d from mem used\n", block->size);
 }
 
 // Function to check if a given pointer is within the allocated memory regions
@@ -419,18 +404,14 @@ void t_gcollect (void) {
         stack_top++;
     }
 
-    printf("Stack scanned.\n");
-
     // Scan the heap for pointers to allocated memory regions
-    // struct MemoryBlock* current = head;
-    // while (current) {
-    //     for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size - 8); current_ptr++) {
-    //         check_valid_pointer(*(void**)current_ptr);
-    //     }
-    //     current = current->next;
-    // }
-
-    // printf("Heap scanned.\n");
+    struct MemoryBlock* current = head;
+    while (current) {
+        for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size - 8); current_ptr++) {
+            check_valid_pointer(*(void**)current_ptr);
+        }
+        current = current->next;
+    }
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
@@ -443,8 +424,6 @@ void t_gcollect (void) {
 }
 
 double t_memutil(){
-    printf("Memory in use: %lu\n", memory_in_use);
-    printf("Total memory allocated: %lu\n", total_memory_allocated);
     return ((double)memory_in_use / total_memory_allocated) * 100;
 }
 
