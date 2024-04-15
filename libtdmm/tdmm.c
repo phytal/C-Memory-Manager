@@ -422,19 +422,19 @@ void t_gcollect (void) {
     printf("Stack scanned.\n");
 
     // Scan the heap for pointers to allocated memory regions
-    struct MemoryBlock* current = head;
-    while (current) {
-        for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size - 8); current_ptr++) {
-            check_valid_pointer(*(void**)current_ptr);
-        }
-        current = current->next;
-    }
+    // struct MemoryBlock* current = head;
+    // while (current) {
+    //     for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size - 8); current_ptr++) {
+    //         check_valid_pointer(*(void**)current_ptr);
+    //     }
+    //     current = current->next;
+    // }
 
-    printf("Heap scanned.\n");
+    // printf("Heap scanned.\n");
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
-        if (!current->size % 4 == 0) {
+        if (current->size % 4 == 0) {
             t_free((void*)(current + 1));
         } else {
             current->size -= 1;
