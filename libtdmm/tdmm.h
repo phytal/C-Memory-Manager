@@ -49,5 +49,10 @@ void t_gcollect (void);
  */
 double t_memutil (void);
 
+/**
+ * Returns the size of the overhead meta data.
+ * @return The size of the overhead meta data.
+ */
+size_t get_overhead_meta_size();
 
 #endif // TDMM_H_

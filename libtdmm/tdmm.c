@@ -405,17 +405,6 @@ void check_valid_pointer(void* ptr) {
     }
 }
 
-// void gcollect_mark_region(void* start, void* end) {
-//     struct MemoryBlock* current = head;
-//     while (current) {
-//         void* block_start = (void*)(current + 1);
-//         void* block_end = (void*)((char*)block_start + current->size);
-//         if (block_start >= start && block_end <= end) {
-//             current->used = true; // Set the usage bit to 1
-//         }
-//         current = current->next;
-//     }
-// }
 
 // basically if theres a pointer in the stack that points to anywhere in a valid memory block, set the usage bit to 1 (used)
 // if the pointer is not in the stack but still in the heap, set the usage bit to 0 (unused) to be garbage collected
@@ -424,55 +413,24 @@ void check_valid_pointer(void* ptr) {
 void t_gcollect (void) {
     long x = 0;
     char * stack_top = (char*)&x;
-    
-    // printf("Stack bottom: %p\n", stack_bottom);
-    // printf("Temp: %p\n", &temp);
-    // char *sp = stack_bottom + (size_t)(char*)temp;
-    // printf("SP: %p\n", sp);
 
-    // Scan the stack for pointers to allocated memory regions
-    // for (; current < (char*)stack_bottom; current++) {
-    //     check_valid_pointer(current);
-    // }
-
-    while (stack_top < (char*) stack_bottom) {
+    while (stack_top < (char*) stack_bottom + total_size - 8) {
         check_valid_pointer(*(void**)stack_top);
-        // void * currRef = *(void **)stack_top;
-
-        // struct MemoryBlock* current = head;
-        // bool founder = false;
-        // while (current != NULL) {
-        //     if (current->free) {
-        //         current = current->next;
-        //         continue;
-        //     }
-        //     if (currRef >= (void*)(current+1) && currRef < (void*)((char*)(current+1) + current->size) && current->size % 4 == 0) {
-        //         current->used = true; // Set the usage bit to 1
-        //         break;
-        //     }
-        //     if(current->next == NULL || founder) break;
-        //     current = current->next;
-        // }
         stack_top++;
     }
-
-    // void* sp = temp + (size_t)(char*)stack_bottom;
-    // for (char* start = sp; start < (char*)stack_bottom-sizeof(char*); start++) { 
-    //     check_valid_pointer((long)((void*)start)); // Check if the pointer is valid
-    // }
 
     printf("Stack scanned.\n");
 
     // Scan the heap for pointers to allocated memory regions
-    // struct MemoryBlock* current = head;
-    // while (current) {
-    //     for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size); current_ptr++) {
-    //         check_valid_pointer((void*)current_ptr);
-    //     }
-    //     current = current->next;
-    // }
+    struct MemoryBlock* current = head;
+    while (current) {
+        for (char* current_ptr = (char*)(current + 1); current_ptr < ((char*)(current + 1) + current->size - 8); current_ptr++) {
+            check_valid_pointer(*(void**)current_ptr);
+        }
+        current = current->next;
+    }
 
-    // printf("Heap scanned.\n");
+    printf("Heap scanned.\n");
 
     // Mark all unused memory blocks for garbage collection
     for (struct MemoryBlock* current = head; current; current = current->next) {
@@ -488,4 +446,12 @@ double t_memutil(){
     printf("Memory in use: %lu\n", memory_in_use);
     printf("Total memory allocated: %lu\n", total_memory_allocated);
     return ((double)memory_in_use / total_memory_allocated) * 100;
+}
+
+size_t get_overhead_meta_size() {
+    int sum = 0;
+    for (struct MemoryBlock* current = head; current; current = current->next) {
+        sum += META_SIZE;
+    }
+    return sum;
 }

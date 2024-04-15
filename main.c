@@ -5,13 +5,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_SIZE 10096
+#define MAX_SIZE (10096)
 #define NUM_ITERATIONS 10000
 
 
 int main() {
     
-    FILE* file = fopen("/u/wzhang/cs429/prog3/output.txt", "w");
+    FILE* file = fopen("/u/wzhang/cs429/prog3/output.csv", "w");
     if (file == NULL) {
         printf("Failed to open file.\n");
         return 1;
@@ -19,7 +19,7 @@ int main() {
 
     // Example usage
     int temp;
-    t_init(FIRST_FIT, &temp);
+    t_init(BEST_FIT, &temp);
     // printf("Current block: %d\n", t_malloc(5072));
     // char* ptr3 = (char*)t_malloc(1);
     // printf("Memory allocation success.\n");
@@ -78,6 +78,7 @@ int main() {
     double total_time = 0;
     // Allocate and immediately free a large number of blocks
     for (int i = 0; i < NUM_ITERATIONS; i++) {
+    // for (size_t size = 1; size <= MAX_SIZE; size*=2) {
         clock_t start_time = clock();
         size_t size = (rand() % MAX_SIZE) + 1;
         void* block = t_malloc(size);
@@ -86,12 +87,17 @@ int main() {
         
         printf("Program Execution Time: %.9f seconds\n", execution_time_seconds);
         // fprintf(file, "Program Execution Time: %.9f seconds\n", execution_time_seconds);
-        // fprintf(file, "Memory used: %f\n", t_memutil());
-        fprintf(file, "%.9f\n", execution_time_seconds);
-        // fprintf(file, "Memory used: %f\n", t_memutil());
-        total_mem_used += t_memutil();
+        // fprintf(file, "%f\n", t_memutil());
+        // fprintf(file, "%.9f\n", execution_time_seconds);
+        fprintf(file, "%d\n", get_overhead_meta_size());
+        // fprintf(file, "%.9f, %f\n", total_time + execution_time_seconds, t_memutil());
+        // fprintf(file, "%.9f, %d\n", execution_time_seconds, size);
+        // total_mem_used += t_memutil();
         total_time += execution_time_seconds;
-        t_free(block);
+        // t_free(block);
+        if (i % 100 == 0) {
+            t_gcollect();
+        }
     }
     printf("Random allocation and free success.\n");
 
