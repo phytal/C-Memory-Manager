@@ -10,7 +10,7 @@
 
 // Structure to represent a memory block
 struct MemoryBlock {
-    size_t size;
+    int size;
     bool free;
     // bool used;
     struct MemoryBlock* prev;
