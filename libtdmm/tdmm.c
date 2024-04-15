@@ -354,20 +354,6 @@ void t_free (void *ptr) {
     }
 }
 
-void t_freeFast (void *ptr) {
-    if (ptr == NULL) {
-        return; // Nothing to free
-    }
-
-    // Find the corresponding memory block
-    struct MemoryBlock* block = (struct MemoryBlock*)ptr - 1;
-
-    // Mark the block as free
-    block->free = true;
-
-    memory_in_use -= block->size;
-}
-
 // Function to check if a given pointer is within the allocated memory regions
 void check_valid_pointer(void* ptr) {
     struct MemoryBlock* current = head;
